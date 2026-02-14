@@ -1,0 +1,18 @@
+{
+  "name": "@kiber/lab-js-notes-microservices",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/kiber/lab-js-notes-microservices#readme",
+  "bugs": {
+    "url": "https://github.com/kiber/lab-js-notes-microservices/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kiber/lab-js-notes-microservices.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {}
+}

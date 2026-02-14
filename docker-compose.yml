@@ -1,0 +1,47 @@
+services:
+  mongo:
+    image: mongo:7.0
+    container_name: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    volumes:
+      - mongo-data:/data/db
+
+  auth:
+    build:
+      context: ./services/lab-js-jwt-auth-api
+      dockerfile: ../../docker/auth-api.Dockerfile
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./services/lab-js-jwt-auth-api/.env
+    depends_on:
+      - mongo
+
+  notes:
+    build:
+      context: ./services/lab-js-notes-crud-api
+      dockerfile: ../../docker/notes-crud-api.Dockerfile
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./services/lab-js-notes-crud-api/.env
+    depends_on:
+      - auth
+      - mongo
+
+  frontend:
+    build:
+      context: ./services/lab-js-notes-frontend
+      dockerfile: ../../docker/notes-frontend.Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - notes
+
+volumes:
+  mongo-data:
