@@ -5,6 +5,7 @@ Microservices-based notes app stack with:
 - Notes CRUD API (`services/lab-js-notes-crud-api`)
 - React frontend (`services/lab-js-notes-frontend`)
 - MongoDB
+- Redis (used by Auth API rate limiting when enabled)
 
 Everything is orchestrated with Docker Compose from this repository.
 
@@ -27,9 +28,10 @@ Everything is orchestrated with Docker Compose from this repository.
 ## Services
 
 - `frontend` (Vite + React): exposed on `http://localhost:5173`
-- `auth` (Express): exposed on `http://localhost:3000`
-- `notes` (Express): exposed on `http://localhost:3001`
+- `auth` (Express): exposed on `http://localhost:3000` (base path `/api/v1`)
+- `notes` (Express): exposed on `http://localhost:3001` (base path `/api/v1`)
 - `mongo` (MongoDB): exposed on `mongodb://localhost:27017`
+- `redis` (Redis): exposed on `redis://localhost:6379`
 
 ## Prerequisites
 
@@ -74,57 +76,29 @@ Compose reads environment files from:
 - `services/lab-js-notes-crud-api/.env`
 - `services/lab-js-notes-frontend/.env` (used by Vite build/dev runtime)
 
-### Recommended local values (browser on localhost)
-
-Frontend `.env`:
-
-```env
-VITE_AUTH_API_URL=http://localhost:3000
-VITE_NOTES_API_URL=http://localhost:3001/api
-```
-
-Auth API `.env`:
-
-```env
-PORT=3000
-CORS_ORIGIN=http://localhost:5173
-MONGO_URI=mongodb://root:example@mongo:27017/auth_db?authSource=admin
-JWT_SECRET=<your-secret>
-JWT_REFRESH_SECRET=<your-refresh-secret>
-LOG_LEVEL=info
-```
-
-Notes API `.env`:
-
-```env
-PORT=3001
-CORS_ORIGIN=http://localhost:5173
-MONGO_URI=mongodb://root:example@mongo:27017/notes_db?authSource=admin
-AUTH_SERVICE_URL=http://auth:3000
-LOG_LEVEL=info
-```
-
 ## API Overview
 
 ### Auth API (`http://localhost:3000`)
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `POST /auth/refresh`
-- `POST /auth/logout`
-- `POST /auth/verify`
-- `GET /profile` (requires access token)
-- `GET /health`
+Base path: `/api/v1`
+
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/verify`
+- `GET /api/v1/profile` (requires access token)
+- `GET /api/v1/health`
 
 ### Notes API (`http://localhost:3001`)
 
-Base path: `/api/notes`
+Base path: `/api/v1/notes`
 
-- `POST /api/notes`
-- `GET /api/notes`
-- `GET /api/notes/:id`
-- `PUT /api/notes/:id`
-- `DELETE /api/notes/:id`
+- `POST /api/v1/notes`
+- `GET /api/v1/notes`
+- `GET /api/v1/notes/:id`
+- `PUT /api/v1/notes/:id`
+- `DELETE /api/v1/notes/:id`
 - `GET /health`
 
 ## Common Troubleshooting
@@ -137,8 +111,8 @@ Symptoms:
 
 Checks:
 1. Frontend must use `localhost` API URLs in `services/lab-js-notes-frontend/.env`, not Docker DNS names:
-   - Correct: `http://localhost:3000`, `http://localhost:3001/api`
-   - Incorrect (for browser): `http://auth:3000`, `http://notes:3001/api`
+   - Correct: `http://localhost:3000/api/v1`, `http://localhost:3001/api/v1`
+   - Incorrect (for browser): `http://auth:3000/api/v1`, `http://notes:3001/api/v1`
 2. Both APIs must allow browser origin via CORS:
    - `CORS_ORIGIN=http://localhost:5173`
 3. Rebuild after env changes:
@@ -149,11 +123,11 @@ docker compose up --build
 
 ### Port conflicts
 
-If ports `3000`, `3001`, `5173`, or `27017` are in use, free them or remap ports in `docker-compose.yml`.
+If ports `3000`, `3001`, `5173`, `27017`, or `6379` are in use, free them or remap ports in `docker-compose.yml`.
 
 ## Development Notes
 
 - Frontend runs Vite dev server with `--host` in container.
-- `notes` service talks to `auth` service through Docker network (`http://auth:3000`).
+- `notes` service talks to `auth` service through Docker network (`http://auth:3000/api/v1`).
 - Mongo credentials are set in Compose and consumed via `MONGO_URI` in each API.
-
+- Auth API can use Redis for rate limiting via `RATE_LIMIT_STORE=redis`.
